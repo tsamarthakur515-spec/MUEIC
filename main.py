@@ -1,8 +1,9 @@
 import yt_dlp
 from pyrogram import Client, filters
 from pytgcalls import PyTgCalls
-from pytgcalls.types.input_stream import AudioPiped
-from pytgcalls.types.input_stream.quality import HighQualityAudio
+from pytgcalls.types import AudioPiped
+from pytgcalls.types.stream import StreamAudioEnded
+from pytgcalls.types.stream import StreamType
 
 # CONFIG
 API_ID = 20898349
