@@ -1,6 +1,6 @@
 import yt_dlp
 from pyrogram import Client, filters
-from pytgcalls import StreamType
+from pytgcalls import PyTgCalls
 from pytgcalls.types.input_stream import AudioPiped, AudioVideoPiped
 from pytgcalls.types.input_stream.quality import HighQualityAudio, HighQualityVideo
 from pytgcalls.exceptions import AlreadyJoinedError, NoActiveGroupCall, TelegramServerError, GroupCallNotFound
