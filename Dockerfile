@@ -25,7 +25,8 @@ COPY . /app
 
 # Install python dependencies
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir pyrogram tgcrypto py-tgcalls yt-dlp
+RUN pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp
+RUN pip install --no-cache-dir py-tgcalls==0.9.7
 
 # Start bot
 CMD ["python", "main.py"]
