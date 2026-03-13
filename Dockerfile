@@ -23,7 +23,8 @@ COPY . /app
 
 # Install python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp py-tgcalls==0.9.7
+    pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp py-tgcalls==0.9.7                           
+RUN apt-get update && apt-get install -y ffmpeg
 
 # Run bot
 CMD ["python", "main.py"]
