@@ -1,10 +1,8 @@
 FROM python:3.10-slim
 
-# Prevent python from writing pyc files
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -24,10 +22,8 @@ RUN apt-get update && \
 COPY . /app
 
 # Install python dependencies
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp
-RUN pip install --no-cache-dir py-tgcalls==0.9.7
-RUN apt-get update && apt-get install -y ffmpeg
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp py-tgcalls==0.9.7
 
-# Start bot
+# Run bot
 CMD ["python", "main.py"]
