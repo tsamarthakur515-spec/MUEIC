@@ -1,13 +1,36 @@
 FROM python:3.10-slim
 
-# Install git + build tools
-RUN apt-get update && apt-get install -y git build-essential ffmpeg libffi-dev && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install system dependencies + Node.js
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        git \
+        build-essential \
+        ffmpeg \
+        aria2 \
+        ca-certificates \
+        wget \
+        gnupg && \
+    # Install Node.js 18
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy project
 COPY . /app
 
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
+# Create downloads folder
+RUN mkdir -p /app/downloads
+
+# Run bot
 CMD ["python", "main.py"]
