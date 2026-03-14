@@ -1,5 +1,3 @@
 pyrogram==2.0.106
 tgcrypto
-yt-dlp
-py-tgcalls==0.9.7
-ffmpeg
+pytgcalls==3.0.0dev36
