@@ -1,11 +1,11 @@
+# Use slim image
 FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
 WORKDIR /app
 
-# Install system dependencies + Node.js
+# Install dependencies
 RUN apt-get update && \
     apt-get install -y \
         curl \
@@ -16,20 +16,16 @@ RUN apt-get update && \
         ca-certificates \
         wget \
         gnupg && \
-    # Install Node.js 18
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy project
 COPY . /app
 
-# Install Python dependencies
+# Upgrade pip and install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Create downloads folder
+# Downloads folder
 RUN mkdir -p /app/downloads
 
 # Run bot
