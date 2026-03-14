@@ -1,30 +1,24 @@
+# ───────────────────────────────────────────────
+# Use Python 3.10 slim as base image
+# ───────────────────────────────────────────────
 FROM python:3.10-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    git \
-    curl \
-    ffmpeg \
-    aria2 \
-    build-essential && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy project
+# Copy all files into container
 COPY . /app
 
-# Install python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir pyrogram==2.0.106 tgcrypto yt-dlp py-tgcalls==0.9.7                           
-RUN apt-get update && apt-get install -y ffmpeg
+# Upgrade pip and install dependencies
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Run bot
+# Expose optional port (not required for Telegram)
+EXPOSE 8080
+
+# Set environment variable for Pyrogram session (optional)
+# You can override this at runtime with: -e SESSION_STRING="..."
+# ENV SESSION_STRING="YOUR_STRING_SESSION_HERE"
+
+# Run main.py
 CMD ["python", "main.py"]
