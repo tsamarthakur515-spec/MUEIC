@@ -1,5 +1,8 @@
 FROM python:3.10-slim
 
+# Install git + build tools
+RUN apt-get update && apt-get install -y git build-essential ffmpeg libffi-dev && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY . /app
