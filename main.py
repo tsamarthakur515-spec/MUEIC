@@ -1,137 +1,82 @@
-import asyncio
-import yt_dlp
 
-from pyrogram import Client, filters
-from pytgcalls import PyTgCalls
-from pytgcalls.types.input_stream import AudioPiped
-from pytgcalls.types.input_stream.quality import HighQualityAudio
-
-
-# CONFIG
-API_ID = 33603336
-API_HASH = "c9683a8ec3b886c18219f650fc8ed429"
-STRING_SESSION = "BQIAvwgAtGpTYJxvUNp8rbi2VNdfNGw-foSWWvDtrWSVnLbKeor1FcHdS2DO3WAwKRUHYT9NyJGuBAIjd9cYSh0JGW7SZjxsMTs0xEWFeU7dxKhHatLzbjhIA8kUOxWj2chH_ags_7fIToe7_LFolcHFbdJhCKAuStVEV4bUXvn43vmALgKi87JQHAId5p9xB7atUNHxMebmAOq6JqABdoBCdtUJC7tEov8GBF0a1C4r8WE8wKoSp5vDjcu7mRIJrUcQ17LMHYY6ACErur_iH3zN2Ny7Nd3VYyIu7Fk7VfeErEZlw-EoNvB89m_e_KYWE3E6ITu-vAtHeTAMG_cDo771-c7GAwAAAAIAgPwVAA"
-
-
-# START CLIENT
-app = Client(
-    "userbot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    session_string=STRING_SESSION
-)
-
-call = PyTgCalls(app)
-
-
-# JOIN VC
-@app.on_message(filters.command("join", ".") & filters.me)
-async def join_vc(_, message):
-
-    chat_id = message.chat.id
-
-    try:
-        await call.join_group_call(chat_id, AudioPiped("silence.mp3"))
-        await message.reply("✅ Joined Voice Chat")
-
-    except:
-        await message.reply("⚠ Already in Voice Chat")
-
-
-# PLAY MUSIC
-@app.on_message(filters.command("play", ".") & filters.me)
-async def play_music(_, message):
-
-    chat_id = message.chat.id
-
-    # REPLY AUDIO
-    if message.reply_to_message:
-
-        audio = message.reply_to_message.audio or message.reply_to_message.voice
-
-        if not audio:
-            return await message.reply("❌ Reply to an audio file")
-
-        file = await message.reply_to_message.download()
-
-        try:
-            await call.change_stream(
-                chat_id,
-                AudioPiped(file, HighQualityAudio())
-            )
-        except:
-            await call.join_group_call(
-                chat_id,
-                AudioPiped(file, HighQualityAudio())
-            )
-
-        return await message.reply("🎵 Playing replied audio")
-
-
-    # YOUTUBE / SEARCH
-    if len(message.command) < 2:
-        return await message.reply("Usage: `.play song name or url`")
-
-    query = message.text.split(None, 1)[1]
-
-    ydl_opts = {
-        "format": "bestaudio",
-        "quiet": True
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(f"ytsearch:{query}", download=False)["entries"][0]
-
-    url = info["url"]
-    title = info["title"]
-
-    try:
-        await call.change_stream(
-            chat_id,
-            AudioPiped(url, HighQualityAudio())
-        )
-
-    except:
-        await call.join_group_call(
-            chat_id,
-            AudioPiped(url, HighQualityAudio())
-        )
-
-    await message.reply(f"🎵 Playing: {title}")
 
 
 # STOP MUSIC
-@app.on_message(filters.command("stop", ".") & filters.me)
-async def stop_music(_, message):
+from pyrogram import Client, filters
+from pyrogram.types import Message
+from pytgcalls import PyTgCalls
+from pytgcalls.types import GroupCallParticipant
+from config import API_ID, API_HASH, STRING_SESSION
+import asyncio
 
+
+app = Client(STRING_SESSION, api_id=API_ID, api_hash=API_HASH)
+calls = PyTgCalls(app)
+
+current_level = 10  # default 10/20
+
+def level_to_volume(lvl: int) -> int:
+    return max(1, min(20, lvl)) * 10  # 1-20 → 10-200
+
+# ---------------- Commands -----------------
+
+@app.on_message(filters.command("level", prefixes=".") & filters.me)
+async def set_level_cmd(_, msg: Message):
+    global current_level
+    if len(msg.command) < 2:
+        await msg.edit(f"Current level: {current_level}/20")
+        return
     try:
-        await call.change_stream(
-            message.chat.id,
-            AudioPiped("silence.mp3")
-        )
+        new_level = int(msg.command[1])
+        if not 1 <= new_level <= 20:
+            raise ValueError
+    except ValueError:
+        await msg.edit("Usage: `.level 1-20`")
+        return
 
-        await message.reply("⏹ Music Stopped")
-
-    except:
-        await message.reply("❌ Nothing Playing")
-
-
-# LEAVE VC
-@app.on_message(filters.command("leave", ".") & filters.me)
-async def leave_vc(_, message):
-
+    current_level = new_level
+    vol = level_to_volume(current_level)
     try:
-        await call.leave_group_call(message.chat.id)
-        await message.reply("👋 Left Voice Chat")
+        await calls.set_my_volume(vol)
+        await msg.edit(f"Mic level set: {current_level}/20 → {vol}/200")
+    except Exception as e:
+        await msg.edit(f"Failed to set volume: {e}")
 
-    except:
-        await message.reply("❌ Not in VC")
+@app.on_message(filters.command("joinvc", prefixes=".") & filters.me)
+async def join_vc(_, msg: Message):
+    chat_id = msg.chat.id
+    try:
+        await calls.join_group_call(chat_id, stream_type="raw")
+        await asyncio.sleep(2)
+        await calls.set_my_volume(level_to_volume(current_level))
+        await msg.edit(f"Joined VC | Mic Level: {current_level}/20")
+    except Exception as e:
+        await msg.edit(f"Error joining VC: {e}")
 
+@app.on_message(filters.command("leavevc", prefixes=".") & filters.me)
+async def leave_vc(_, msg: Message):
+    try:
+        await calls.leave_group_call(msg.chat.id)
+        await msg.edit("Left VC")
+    except Exception as e:
+        await msg.edit(f"Error leaving VC: {e}")
 
-# START BOT
-app.start()
-call.start()
+# ---------------- Auto re-apply volume -----------------
+@calls.on_participant_updated()
+async def participant_update(_, participant: GroupCallParticipant):
+    if participant.user_id == (await app.get_me()).id:
+        try:
+            await calls.set_my_volume(level_to_volume(current_level))
+        except:
+            pass
 
-print("VC USERBOT STARTED")
+# ---------------- Run -----------------
+async def main():
+    await app.start()
+    await calls.start()
+    print("Userbot running! Use .joinvc and .level to boost mic")
+    while True:
+        await asyncio.sleep(60)
 
-asyncio.get_event_loop().run_forever()
+if __name__ == "__main__":
+    asyncio.run(main())
